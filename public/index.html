@@ -493,6 +493,14 @@
       </svg>`;
     }
 
+    // Generate Android VLC intent link
+    function getVlcIntentUrl(fileUrl) {
+      const absoluteUrl = new URL(fileUrl, window.location.href).href;
+      const urlWithoutScheme = absoluteUrl.replace(/^https?:\/\//, '');
+      const scheme = absoluteUrl.startsWith('https') ? 'https' : 'http';
+      return `intent://${urlWithoutScheme}#Intent;scheme=${scheme};type=video/*;package=org.videolan.vlc;end`;
+    }
+
     // Render file grid
     function renderFiles(files) {
       fileCount.textContent = `${files.length} file${files.length === 1 ? '' : 's'}`;
@@ -528,6 +536,13 @@
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 16px; height: 16px;">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
                   </svg> Stream
+                </a>
+              ` : ''}
+              ${file.type === 'video' ? `
+                <a href="${getVlcIntentUrl(file.url)}" class="action-btn play" style="background: #e27200;" onclick="event.stopPropagation();">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 16px; height: 16px;">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  </svg> VLC
                 </a>
               ` : ''}
               <a href="${file.url}" download="${safeName}" class="action-btn download" onclick="event.stopPropagation();">
