@@ -114,8 +114,43 @@ const server = Bun.serve({
         return new Response("File Not Found", { status: 404 });
       }
       
-      // Bun handles ranges automatically for videos! This is fantastic for streaming.
-      return new Response(file);
+      const range = req.headers.get("range");
+      const contentType = file.type || "application/octet-stream";
+      
+      if (range) {
+        const size = file.size;
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : size - 1;
+        
+        if (start >= size || end >= size) {
+          return new Response("Requested Range Not Satisfiable", {
+            status: 416,
+            headers: {
+              "Content-Range": `bytes */${size}`,
+              "Accept-Ranges": "bytes"
+            }
+          });
+        }
+        
+        const chunk = file.slice(start, end + 1);
+        return new Response(chunk, {
+          status: 206,
+          headers: {
+            "Content-Range": `bytes ${start}-${end}/${size}`,
+            "Accept-Ranges": "bytes",
+            "Content-Length": `${end - start + 1}`,
+            "Content-Type": contentType
+          }
+        });
+      }
+      
+      return new Response(file, {
+        headers: {
+          "Accept-Ranges": "bytes",
+          "Content-Type": contentType
+        }
+      });
     }
     
     // Fallback: serve other files from public folder
