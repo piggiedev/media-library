@@ -1,0 +1,13 @@
+{
+  "name": "local-media-library",
+  "version": "1.0.0",
+  "description": "A beautiful local file sharing server to stream and upload media files from a phone or other devices on the same Wi-Fi.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

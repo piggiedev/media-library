@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Media Library</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0d0f12;
+      --card-bg: rgba(22, 26, 33, 0.8);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f0f3f6;
+      --text-muted: #8b949e;
+      --accent: #818cf8; /* indigo-400 */
+      --accent-hover: #6366f1; /* indigo-500 */
+      --accent-alpha: rgba(129, 140, 248, 0.15);
+      --success: #34d399; /* emerald-400 */
+      --danger: #f87171; /* red-400 */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px 16px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 50%, #4f46e5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    main {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* Glassmorphism panel for Upload */
+    .upload-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      transition: border-color 0.3s ease;
+    }
+
+    .upload-section.dragover {
+      border-color: var(--accent);
+      background: rgba(129, 140, 248, 0.05);
+    }
+
+    .dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 32px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dropzone:hover {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .dropzone svg {
+      width: 48px;
+      height: 48px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .dropzone p {
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .dropzone span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.1s linear;
+    }
+
+    /* Search and Filters */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-wrapper {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 16px 12px 42px;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-alpha);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Library list styling */
+    .library-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .file-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .file-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .file-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(129, 140, 248, 0.4);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .file-icon-wrapper {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .file-card.video .file-icon-wrapper {
+      background: rgba(129, 140, 248, 0.12);
+      color: var(--accent);
+    }
+
+    .file-card.image .file-icon-wrapper {
+      background: rgba(52, 211, 153, 0.12);
+      color: var(--success);
+    }
+
+    .file-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .file-info {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .file-name {
+      font-weight: 500;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      color: var(--text-main);
+    }
+
+    .file-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 8px;
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 12px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      border: none;
+    }
+
+    .action-btn.play {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .action-btn.play:hover {
+      background: var(--accent-hover);
+    }
+
+    .action-btn.download {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+    }
+
+    .action-btn.download:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+
+
+    /* Toast message style */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1f2937;
+      border-left: 4px solid var(--accent);
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      display: none;
+      animation: slideIn 0.3s ease forwards;
+      z-index: 1010;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.7rem; }
+      .file-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="main-title">Media Sharing Library</h1>
+    <p class="subtitle" id="subtitle-text">Stream and upload files to your local folder on Wi-Fi</p>
+  </header>
+
+  <main>
+    <!-- Upload Dropzone -->
+    <section class="upload-section" id="dropzoneContainer">
+      <div class="dropzone" id="dropzone">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <p>Drag & Drop files here</p>
+        <span>or click to browse from your device</span>
+        <input type="file" id="fileInput">
+      </div>
+      
+      <!-- Progress Bar -->
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-info">
+          <span id="progressFilename">filename.mp4</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBarFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="controls">
+      <div class="search-wrapper">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search media files...">
+      </div>
+    </section>
+
+    <!-- Library Files -->
+    <section class="library-section">
+      <div class="section-header">
+        <h2 class="section-title">Your Media Files</h2>
+        <span class="file-count" id="fileCount">0 files</span>
+      </div>
+      
+      <div class="file-grid" id="fileGrid">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+  </main>
+
+
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">Notification text</div>
+
+  <script>
+    let filesData = [];
+
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const dropzoneContainer = document.getElementById('dropzoneContainer');
+    const fileInput = document.getElementById('fileInput');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFilename = document.getElementById('progressFilename');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const fileGrid = document.getElementById('fileGrid');
+    const fileCount = document.getElementById('fileCount');
+    const searchInput = document.getElementById('searchInput');
+    const toast = document.getElementById('toast');
+
+    // Load files list
+    async function loadFiles() {
+      try {
+        const res = await fetch('/api/files');
+        if (!res.ok) throw new Error('Failed to fetch files');
+        filesData = await res.json();
+        renderFiles(filesData);
+      } catch (err) {
+        showToast('Error loading file list: ' + err.message);
+      }
+    }
+
+    // Format file sizes
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Format modification dates
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+    }
+
+    // Get icon SVG based on file type
+    function getFileIcon(type) {
+      if (type === 'video') {
+        return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px; height: 24px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>`;
+      } else if (type === 'image') {
+        return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px; height: 24px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>`;
+      } else if (type === 'audio') {
+        return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px; height: 24px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+        </svg>`;
+      }
+      return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 24px; height: 24px;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>`;
+    }
+
+    // Render file grid
+    function renderFiles(files) {
+      fileCount.textContent = `${files.length} file${files.length === 1 ? '' : 's'}`;
+      if (files.length === 0) {
+        fileGrid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+            No media files found.
+          </div>
+        `;
+        return;
+      }
+
+      fileGrid.innerHTML = files.map(file => {
+        const safeName = file.name.replace(/"/g, '&quot;');
+        return `
+          <div class="file-card ${file.type}" onclick="handleFileClick('${file.url}')">
+            <div class="file-header">
+              <div class="file-icon-wrapper">
+                ${getFileIcon(file.type)}
+              </div>
+              <div class="file-info">
+                <div class="file-name" title="${safeName}">${file.name}</div>
+                <div class="file-meta">
+                  <span>${formatBytes(file.size)}</span>
+                  <span>&bull;</span>
+                  <span>${formatDate(file.mtime)}</span>
+                </div>
+              </div>
+            </div>
+            <div class="file-actions">
+              ${file.type === 'video' || file.type === 'audio' || file.type === 'image' ? `
+                <a href="${file.url}" target="_blank" class="action-btn play" onclick="event.stopPropagation();">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 16px; height: 16px;">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                  </svg> Stream
+                </a>
+              ` : ''}
+              <a href="${file.url}" download="${safeName}" class="action-btn download" onclick="event.stopPropagation();">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg> Download
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Filter list by search
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const filtered = filesData.filter(file => file.name.toLowerCase().includes(q));
+      renderFiles(filtered);
+    });
+
+    // File Click handler (open in new tab for native streaming/viewing)
+    function handleFileClick(url) {
+      window.open(url, '_blank');
+    }
+
+    // Handle Upload Trigger
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        uploadFile(e.target.files[0]);
+      }
+    });
+
+    // Drag and Drop styling
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzoneContainer.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzoneContainer.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzoneContainer.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzoneContainer.classList.remove('dragover');
+      }, false);
+    });
+
+    dropzoneContainer.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        uploadFile(files[0]);
+      }
+    });
+
+    // Upload function with progress bar
+    function uploadFile(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      progressContainer.style.display = 'block';
+      progressFilename.textContent = file.name;
+      progressBarFill.style.width = '0%';
+      progressPercent.textContent = '0%';
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload', true);
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBarFill.style.width = percent + '%';
+          progressPercent.textContent = percent + '%';
+        }
+      });
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          showToast('Upload successful!');
+          loadFiles();
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+          }, 1500);
+        } else {
+          showToast('Upload failed. Try again.');
+        }
+      };
+
+      xhr.onerror = () => {
+        showToast('Connection error during upload.');
+      };
+
+      xhr.send(formData);
+    }
+
+    // Helper: Toast notifications
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3500);
+    }
+
+    // Initialize
+    loadFiles();
+  </script>
+</body>
+</html>
